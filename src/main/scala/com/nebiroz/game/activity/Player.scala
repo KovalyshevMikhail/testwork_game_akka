@@ -37,7 +37,7 @@ class Player(val name: String, val isEvil: Boolean) {
           warrior.getAction() match {
             case simple: SimpleAttack => {
               val enemyWarrior = enemy.troop.warrior()
-              attackLog.append(f" атакует [${enemy.getRace().name} - ${enemyWarrior.name}%10s] = ${simple.damage}|\n")
+              attackLog.append(f" атакует [${enemy.getRace().name} - ${enemyWarrior.name}%10s] = ${simple.damage} * ${warrior.getPower()} |\n")
               enemyWarrior.takeDamage(simple.damage * warrior.getPower())
             }
             case _: UpgradePower => {
