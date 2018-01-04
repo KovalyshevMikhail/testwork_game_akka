@@ -3,6 +3,7 @@ package com.nebiroz.game.activity
 import com.nebiroz.game.Game
 import com.nebiroz.game.activity.actions.{Action, DowngradePower, SimpleAttack, UpgradePower}
 import com.nebiroz.game.activity.army.Pawn
+import com.nebiroz.game.activity.exceptions.NoMoreInArmyException
 import com.nebiroz.game.activity.race.Race
 
 import scala.util.Random
@@ -25,30 +26,32 @@ class Player(val name: String, val isEvil: Boolean) {
     *
     * @param enemy - вражеский игрок
     */
+  @throws(classOf[NoMoreInArmyException])
   def attack(enemy: Player): String = {
     val attackLog = new StringBuilder
+    val sizeAliveArmy = troop.getCountOfAlive
 
-    while (isAnyoneToPlay()) {
+    for(number <- 1 to sizeAliveArmy) {
       troop nextWarrior() match {
         case warrior: Pawn => {
-          attackLog.append(f"| Воин [${getRace().name} - ${warrior.name}%10s]")
+          attackLog.append(f"| $number Воин [${myRace().name} - ${warrior.name}%9s(${warrior.health()}%5s)]")
           warrior.turnPlayOn()
 
           warrior.getAction() match {
             case simple: SimpleAttack => {
               val enemyWarrior = enemy.troop.warrior()
-              attackLog.append(f" атакует [${enemy.getRace().name} - ${enemyWarrior.name}%10s] = ${simple.damage} * ${warrior.getPower()} |\n")
-              enemyWarrior.takeDamage(simple.damage * warrior.getPower())
+              attackLog.append(f" атакует [${enemy.myRace().name} - ${enemyWarrior.name}%9s(${enemyWarrior.health()}%5s)] = ${simple.damage}%4s * ${warrior.getPower()}%3s == ${simple.damage * warrior.getPower()}%4s |\n")
+              enemy.takeDamage(warrior, simple)
             }
-            case _: UpgradePower => {
+            case upgrade: UpgradePower => {
               val myWarrior = troop.warrior()
-              attackLog.append(f" апгрейдит [${getRace().name} - ${myWarrior.name}%10s] |\n")
-              myWarrior.upgrade()
+              attackLog.append(f" апгрейдит [${myRace().name} - ${myWarrior.name}%10s] |\n")
+              myWarrior.upgrade(upgrade.damage)
             }
-            case _: DowngradePower => {
+            case downgrade: DowngradePower => {
               val enemyWarrior = enemy.troop.warrior()
-              attackLog.append(f" даунгрейдит [${enemy.getRace().name} - ${enemyWarrior.name}%10s] |\n")
-              enemyWarrior.downgrade()
+              attackLog.append(f" даунгрейдит [${enemy.myRace().name} - ${enemyWarrior.name}%10s] |\n")
+              enemyWarrior.downgrade(downgrade.damage)
             }
             case _: Action => {
               attackLog.append("Пришел какой-то другой навык |\n")
@@ -67,8 +70,8 @@ class Player(val name: String, val isEvil: Boolean) {
     *
     * @param pawn - воин вражеского игрока
     */
-  def takeDamage(pawn: Pawn): Unit = {
-    troop.warrior().takeDamage(pawn.damage * pawn.getPower())
+  def takeDamage(pawn: Pawn, action: SimpleAttack): Unit = {
+    troop.warrior().takeDamage(action.damage * pawn.getPower())
     pawn.normalPower()
   }
 
@@ -77,13 +80,13 @@ class Player(val name: String, val isEvil: Boolean) {
     *
     * @return
     */
-  def isAlive(): Boolean = troop isMoreAlive()
+  def isAlive: Boolean = troop.isMoreAlive
 
-  def isAnyoneToPlay(): Boolean = troop.isMorePlayed()
+  def isAnyoneToPlay: Boolean = troop.isMorePlayed
 
   override def toString: String = s"Имя команды[$name]"
 
-  def getRace(): Race = this.race
+  def myRace(): Race = this.race
 
   def troopStatus(): String = f"| ${troop.race.name}%15s | ${troop.status()}"
 

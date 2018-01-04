@@ -1,6 +1,7 @@
 package com.nebiroz.game.activity
 
-import com.nebiroz.game.activity.army.{Archer, Fighter, Mag, Pawn}
+import com.nebiroz.game.activity.army.Pawn
+import com.nebiroz.game.activity.exceptions.NoMoreInArmyException
 import com.nebiroz.game.activity.race.Race
 
 import scala.util.Random
@@ -37,19 +38,42 @@ class Troop(val race: Race) {
     *
     * @return - случайный воин
     */
+  @throws(classOf[NoMoreInArmyException])
   def warrior(): Pawn = {
-    pawns(Random.nextInt(pawns.size))
+    val localTroop = pawns filter((pawn: Pawn) => pawn.isAlive) collect {
+      case p: Pawn => p
+    }
+    if (localTroop.isEmpty) {
+      throw new NoMoreInArmyException("У врага нет войск")
+    }
+    localTroop(Random.nextInt(localTroop.size))
   }
 
+  /**
+    * Метод возвращает следующего воина в отряде.
+    * Если есть живые и те, кто могут ходить, то выбираем.
+    * Выбираем сначала тех, кто проапргреден, и выбираем случайного воина из них.
+    * Выбираем затем из остальных.
+    *
+    * @return
+    */
   def nextWarrior(): Any = {
-    if (isMoreAlive() && isMorePlayed()) {
-      val whoCan = pawns filter((pawn: Pawn) => !pawn.isPlayed()) collect {
-        case p: Pawn => p
-      }
-      whoCan(Random.nextInt(whoCan.size))
+    val morePower = pawns filter((pawn: Pawn) => (!pawn.isPlayed) && pawn.getPower() > 1.0) collect {
+      case p: Pawn => p
+    }
+    if (morePower.nonEmpty) {
+      morePower(Random.nextInt(morePower.size))
     }
     else {
-      false
+      val whoCan = pawns filter((pawn: Pawn) => (!pawn.isPlayed) && pawn.isAlive) collect {
+        case p: Pawn => p
+      }
+      if (whoCan.nonEmpty) {
+        whoCan(Random.nextInt(whoCan.size))
+      }
+      else {
+        false
+      }
     }
   }
 
@@ -58,7 +82,7 @@ class Troop(val race: Race) {
     *
     * @return - есть или нет
     */
-  def isMoreAlive(): Boolean = pawns.count((p: Pawn) => p isAlive()) > 0
+  def isMoreAlive: Boolean = pawns.count((p: Pawn) => p.isAlive) > 0
 
   /**
     * Метод начинает новый раунд.
@@ -68,7 +92,7 @@ class Troop(val race: Race) {
     */
   def newRound(): Unit = {
     pawns foreach((p: Pawn) => {
-      if (p.isAlive()) {
+      if (p.isAlive) {
         p.turnPlayOff()
       }
       else {
@@ -82,7 +106,9 @@ class Troop(val race: Race) {
     *
     * @return - есть или нет
     */
-  def isMorePlayed(): Boolean = pawns.count((p: Pawn) => !p.isPlayed()) > 0
+  def isMorePlayed: Boolean = pawns.count((p: Pawn) => !p.isPlayed) > 0
+
+  def getCountOfAlive: Int = pawns.count((p: Pawn) => p.isAlive)
 
   /**
     * Возращаем статус по отряду

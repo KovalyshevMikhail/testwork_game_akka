@@ -3,7 +3,7 @@ package com.nebiroz.game.activity.army
 import com.nebiroz.game.activity.actions.{Action, SimpleAttack}
 import com.nebiroz.game.activity.race._
 
-class Archer(val archerName: String, val archerDamage: Double, val archerRace: Race) extends Pawn(archerName, archerDamage, archerRace) {
+class Archer(val archerName: String, val archerRace: Race) extends Pawn(archerName, archerRace) {
   override def name(race: Race): String = race match {
     case elf: Elf => "Лучник"
     case hum: Human => "Арбалетчик"
@@ -30,5 +30,5 @@ class Archer(val archerName: String, val archerDamage: Double, val archerRace: R
     )
   }
 
-  override def toString: String = s"Раса=${race.name} Тип=${name(race)} Здоровье=$healthLevel "
+  override def toString: String = s"Раса=${race.name} Тип=${name(race)} Здоровье=${health()} "
 }

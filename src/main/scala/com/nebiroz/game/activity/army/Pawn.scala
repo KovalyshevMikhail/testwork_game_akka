@@ -9,7 +9,7 @@ import scala.util.Random
 /**
 * Любой игральный объект, который атакует
 */
-abstract class Pawn(val name: String, val damage: Double, val race: Race) extends THealth with TUpgradeable {
+abstract class Pawn(val name: String, val race: Race) extends THealth with TUpgradeable {
   /**
     * Список навыков игрового НПС
     */
@@ -30,7 +30,7 @@ abstract class Pawn(val name: String, val damage: Double, val race: Race) extend
 
   def turnPlayOff(): Unit = played = false
   def turnPlayOn(): Unit = played = true
-  def isPlayed(): Boolean = played
+  def isPlayed: Boolean = played
 }
 
 object Pawn extends Enumeration {

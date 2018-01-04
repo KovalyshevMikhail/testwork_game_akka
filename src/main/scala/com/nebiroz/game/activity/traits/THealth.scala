@@ -2,7 +2,7 @@ package com.nebiroz.game.activity.traits
 
 trait THealth {
   private val MAX_HEALTH: Double = 100.0
-  protected var healthLevel: Double = MAX_HEALTH
+  private var healthLevel: Double = MAX_HEALTH
 
   def takeDamage(damage: Double): Unit = {
     if (healthLevel > 0) {
@@ -19,7 +19,7 @@ trait THealth {
     }
   }
 
-  def isAlive(): Boolean = healthLevel > 0
+  def isAlive: Boolean = healthLevel > 0
 
   def health(): Double = healthLevel
 }

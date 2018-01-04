@@ -3,8 +3,8 @@ package com.nebiroz.game.activity.army
 import com.nebiroz.game.activity.actions.{Action, SimpleAttack}
 import com.nebiroz.game.activity.race._
 
-class Fighter(val fighterName: String, val fighterDamage: Double, val fighterRace: Race)
-  extends Pawn(fighterName, fighterDamage, fighterRace) {
+class Fighter(val fighterName: String, val fighterRace: Race)
+  extends Pawn(fighterName, fighterRace) {
   override def name(race: Race): String = race match {
     case elf: Elf => "Воин"
     case hum: Human => "Воин"
@@ -27,5 +27,5 @@ class Fighter(val fighterName: String, val fighterDamage: Double, val fighterRac
     )
   }
 
-  override def toString: String = s"Раса=${race.name} Тип=${name(race)} Здоровье=$healthLevel "
+  override def toString: String = s"Раса=${race.name} Тип=${name(race)} Здоровье=${health()} "
 }
