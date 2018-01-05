@@ -1,5 +1,7 @@
 package com.nebiroz.game
 
+import com.nebiroz.game.activity.exceptions.{EndGameException, NoMoreInArmyException}
+
 import scala.util.control.Breaks._
 import com.nebiroz.game.activity.{Loger, Player}
 import com.nebiroz.game.activity.race.{Race, _}
@@ -31,47 +33,68 @@ class Game {
     Loger.info("Да начнется битва!!\n\n")
     val roundResult: StringBuilder = new StringBuilder
 
-    // запускаем игровой цикл
-    for (round <- 1 to MAX_ROUND) {
-      roundResult append f"|Раунд - [$round%03d] ---------------------------------------------------------------------------|\n"
+    var isEnd = false
 
-      // по порядку выбираем игроков
-      players.foreach((player: Player) => {
-        // сразу помечаем, что игрок уже ходил
-        player.played = true
+    try {
+      // запускаем игровой цикл
+      for (round <- 1 to MAX_ROUND) {
+        roundResult append f"|Раунд - [$round%03d] ---------------------------------------------------------------------------|\n"
 
-        // выбираем противника, по которому можно ударить
-        val enemies = players
-          .filter((compare: Player) => (!compare.name.equals(player.name)) && compare.isAlive)
-          .collect {
-            case player: Player => player
+        // по порядку выбираем игроков
+        players.foreach((player: Player) => {
+          // сразу помечаем, что игрок уже ходил
+          player.played = true
+
+          // выбираем противника, по которому можно ударить
+          val enemies = players
+            .filter((compare: Player) => (!compare.name.equals(player.name)) && compare.isAlive)
+            .collect {
+              case player: Player => player
+            }
+
+          try {
+            // если противник есть, то бьем его
+            if (enemies.nonEmpty) {
+              val enemy = enemies(Random.nextInt(enemies.size))
+              roundResult append f"| Игрок [${player.name}%20s - ${player.myRace().name}%10s] атакует [${enemy.name}%20s - ${enemy.myRace().name}%10s] ----------|\n"
+              roundResult append s"${player.attack(enemy)}"
+            }
+            // иначе выходим из цикла и заканчиваем игру
+            else {
+              isEnd = true
+            }
           }
+          catch {
+            case noMoreInTroop: NoMoreInArmyException => {
+              isEnd = true
+            }
+          }
+        })
 
-        // если противник есть, то бьем его
-        if (enemies.nonEmpty) {
-          val enemy = enemies(Random.nextInt(enemies.size))
-          roundResult append f"| Игрок [${player.name}%20s - ${player.myRace().name}%10s] атакует [${enemy.name}%20s - ${enemy.myRace().name}%10s] ----------|\n"
-          roundResult append s"${player.attack(enemy)}"
+        // проходим по списку игроков и всем сообщаем о новом раунде
+        players foreach ((player: Player) => {
+          player.newRound()
+        })
+
+        // добавляем завершающую строку раунда, выводим и очищаем буфер
+        roundResult append s"|---------------------------------------------------------------------------------------------|\n"
+        Loger.info(roundResult.toString())
+        roundResult.clear()
+
+        if (isEnd) {
+          throw new EndGameException
         }
-        // иначе выходим из цикла и заканчиваем игру
-        else {
-          roundResult append s"|---------------------------------------------------------------------------------------------|\n"
-          Loger.info(roundResult.toString())
-          roundResult.clear()
+      }
+    }
+    catch {
+      case _: EndGameException => {
 
-          break
-        }
-      })
-
-      // проходим по списку игроков и всем сообщаем о новом раунде
-      players foreach((player: Player) => {
-        player.newRound()
-      })
-
-      // добавляем завершающую строку раунда, выводим и очищаем буфер
-      roundResult append s"|---------------------------------------------------------------------------------------------|\n"
-      Loger.info(roundResult.toString())
-      roundResult.clear()
+      }
+      case exception: Exception => {
+        println(exception.getMessage)
+        println(exception.getCause.getMessage)
+        exception.printStackTrace()
+      }
     }
 
     // выводим надписи и выводим победителя(ей)
@@ -79,6 +102,7 @@ class Game {
     Loger.info("Результаты:")
     checkWinner(players)
   }
+
 
   /**
     * Метод выводит статистику по отряду у игрока

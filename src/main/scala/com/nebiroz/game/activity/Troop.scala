@@ -49,9 +49,11 @@ class Troop(val race: Race) {
       case p: Pawn => p
     }
     if (localTroop.isEmpty) {
-      throw new NoMoreInArmyException("У врага нет войск")
+      null
     }
-    localTroop(Random.nextInt(localTroop.size))
+    else{
+      localTroop(Random.nextInt(localTroop.size))
+    }
   }
 
   /**

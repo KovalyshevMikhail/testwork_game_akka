@@ -24,11 +24,11 @@ trait THealth {
     * @param damage - урон
     */
   def takeDamage(damage: Double): Unit = {
-    if (healthLevel <= 0) {
-      healthLevel = 0
-    }
-    else {
+    if (healthLevel > 0.0) {
       healthLevel -= damage
+    }
+    if (healthLevel < 0.0) {
+      healthLevel = 0.0
     }
   }
 
@@ -37,7 +37,7 @@ trait THealth {
     *
     */
   def restoreHealth(): Unit = {
-    if (healthLevel > 0) {
+    if (healthLevel > 0.0) {
       healthLevel = MAX_HEALTH
     }
   }
@@ -47,7 +47,7 @@ trait THealth {
     *
     * @return
     */
-  def isAlive: Boolean = healthLevel > 0
+  def isAlive: Boolean = healthLevel > 0.0
 
   /**
     * Выдать текущий уровень здоровья

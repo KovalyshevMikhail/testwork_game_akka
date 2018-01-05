@@ -65,23 +65,31 @@ class Player(val name: String, val isEvil: Boolean) {
           case simple: SimpleAttack => {
             // вытаскиваем воина из отряда противника
             val enemyWarrior = enemy.troop.warrior()
-            attackLog.append(f" атакует [${enemy.myRace().name} - ${enemyWarrior.name}%9s(${enemyWarrior.health()}%5s)] = ${simple.damage}%4s * ${warrior.power()}%3s == ${simple.damage * warrior.power()}%4s |\n")
-            // проводим атаку
-            enemy.takeDamage(warrior, simple)
+            if (enemyWarrior != null) {
+              attackLog.append(f" атакует [${enemy.myRace().name} - ${enemyWarrior.name}%9s(${enemyWarrior.health()}%5s)] = ${simple.damage}%4s * ${warrior.power()}%3s == ${simple.damage * warrior.power()}%4s |\n")
+              // проводим атаку
+              enemy.takeDamage(warrior, simple)
+            }
           }
           case upgrade: UpgradePower => {
             // достаем воина из своего отряда
             val myWarrior = troop.warrior()
-            attackLog.append(f" апгрейдит [${myRace().name} - ${myWarrior.name}%10s] |\n")
-            // апгрейдим
-            myWarrior.upgrade(upgrade.damage)
+
+            if (myWarrior != null) {
+              attackLog.append(f" апгрейдит [${myRace().name} - ${myWarrior.name}%10s] |\n")
+              // апгрейдим
+              myWarrior.upgrade(upgrade.damage)
+            }
           }
           case downgrade: DowngradePower => {
             // достаем воина из отряда противника
             val enemyWarrior = enemy.troop.warrior()
-            attackLog.append(f" даунгрейдит [${enemy.myRace().name} - ${enemyWarrior.name}%10s] |\n")
-            // наводим ему даунгрейд
-            enemyWarrior.downgrade(downgrade.damage)
+
+            if (enemyWarrior != null) {
+              attackLog.append(f" даунгрейдит [${enemy.myRace().name} - ${enemyWarrior.name}%10s] |\n")
+              // наводим ему даунгрейд
+              enemyWarrior.downgrade(downgrade.damage)
+            }
           }
           case _: Action => {
             // пришел значит не обработанный навык, надо проверять что не так получилось...
