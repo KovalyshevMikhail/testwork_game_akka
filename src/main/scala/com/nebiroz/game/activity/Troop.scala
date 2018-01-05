@@ -6,6 +6,11 @@ import com.nebiroz.game.activity.race.Race
 
 import scala.util.Random
 
+/**
+  * Класс 1 отряда с воинами
+  *
+  * @param race - раса отряда
+  */
 class Troop(val race: Race) {
   // главный констуктор. надо создать отряд
   private val pawns: List[Pawn] = makeDefaultArmy()
@@ -57,22 +62,27 @@ class Troop(val race: Race) {
     *
     * @return
     */
-  def nextWarrior(): Any = {
-    val morePower = pawns filter((pawn: Pawn) => (!pawn.isPlayed) && pawn.getPower() > 1.0) collect {
+  def nextWarrior(): Pawn = {
+    // выбираем тех, кто с повышенным уровнем урона
+    val morePower = pawns filter((pawn: Pawn) => (!pawn.isPlayed) && pawn.power() > 1.0) collect {
       case p: Pawn => p
     }
+    // если такие есть - то возвращаем случйного воина из выбранных
     if (morePower.nonEmpty) {
       morePower(Random.nextInt(morePower.size))
     }
+    // иначе выбираем из обычных воинов
     else {
+      // выбираем кто живой и кто может походить
       val whoCan = pawns filter((pawn: Pawn) => (!pawn.isPlayed) && pawn.isAlive) collect {
         case p: Pawn => p
       }
+      // возвращаем случайного воина
       if (whoCan.nonEmpty) {
         whoCan(Random.nextInt(whoCan.size))
       }
       else {
-        false
+        null
       }
     }
   }
@@ -108,6 +118,11 @@ class Troop(val race: Race) {
     */
   def isMorePlayed: Boolean = pawns.count((p: Pawn) => !p.isPlayed) > 0
 
+  /**
+    * Вернуть количество живых в отряде
+    *
+    * @return - количество живых в отряде
+    */
   def getCountOfAlive: Int = pawns.count((p: Pawn) => p.isAlive)
 
   /**

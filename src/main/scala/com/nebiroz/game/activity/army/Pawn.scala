@@ -20,19 +20,44 @@ abstract class Pawn(val name: String, val race: Race) extends THealth with TUpgr
   private var played: Boolean = false
 
   /**
+    * Вернут имя в соответствии с расой
     *
-    * @param race
-    * @return
+    * @param race - раса
+    * @return - название
     */
   def name(race: Race): String
+
+  /**
+    * Вернуть список навыков в соответствии с расой
+    *
+    * @param race - раса
+    * @return - список навыков
+    */
   def action(race: Race): List[Action]
-  def getAction(): Action = actions(Random.nextInt(actions.size))
 
+  /**
+    * Вернуть случайный навык из списка доступных.
+    *
+    * @return
+    */
+  def action(): Action = actions(Random.nextInt(actions.size))
+
+  /**
+    * Отметить, что игрок не ходил
+    *
+    */
   def turnPlayOff(): Unit = played = false
-  def turnPlayOn(): Unit = played = true
-  def isPlayed: Boolean = played
-}
 
-object Pawn extends Enumeration {
-  val Archer, Mag, Fighter = Value
+  /**
+    * Отметить, что игрок ходил
+    *
+    */
+  def turnPlayOn(): Unit = played = true
+
+  /**
+    * Ходил ли игрок ?
+    *
+    * @return - флаг хождения игрока
+    */
+  def isPlayed: Boolean = played
 }

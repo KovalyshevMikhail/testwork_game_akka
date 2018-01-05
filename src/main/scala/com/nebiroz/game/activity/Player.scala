@@ -8,7 +8,19 @@ import com.nebiroz.game.activity.race.Race
 
 import scala.util.Random
 
+/**
+  * Класс игрока.
+  *
+  * @param name - имя игрока
+  * @param isEvil - добрый или злой игрок
+  */
 class Player(val name: String, val isEvil: Boolean) {
+
+  /**
+    * Объявляем расу игрока.
+    * Выбираем случайно из списка хороших \ плохих рас
+    *
+    */
   private val race: Race = {
     if (isEvil)
       Game.evilRaces()(Random.nextInt(Game.evilRaces().size))
@@ -21,6 +33,11 @@ class Player(val name: String, val isEvil: Boolean) {
   private val troop: Troop = new Troop(this.race)
 
   /**
+    * Флаг, означающий ходил игрок или еще нет
+    */
+  var played: Boolean = false
+
+  /**
     * Команда атаки врага.
     * Выбираем случайно воина и атакуем врага
     *
@@ -28,39 +45,55 @@ class Player(val name: String, val isEvil: Boolean) {
     */
   @throws(classOf[NoMoreInArmyException])
   def attack(enemy: Player): String = {
+    // инициализируем лог атаки и количество воинов, кто живой еще
     val attackLog = new StringBuilder
     val sizeAliveArmy = troop.getCountOfAlive
 
+    // запускаем цикл по количеству живых воинов
     for(number <- 1 to sizeAliveArmy) {
-      troop nextWarrior() match {
-        case warrior: Pawn => {
-          attackLog.append(f"| $number Воин [${myRace().name} - ${warrior.name}%9s(${warrior.health()}%5s)]")
-          warrior.turnPlayOn()
+      // берем воина
+      val warrior = troop nextWarrior()
 
-          warrior.getAction() match {
-            case simple: SimpleAttack => {
-              val enemyWarrior = enemy.troop.warrior()
-              attackLog.append(f" атакует [${enemy.myRace().name} - ${enemyWarrior.name}%9s(${enemyWarrior.health()}%5s)] = ${simple.damage}%4s * ${warrior.getPower()}%3s == ${simple.damage * warrior.getPower()}%4s |\n")
-              enemy.takeDamage(warrior, simple)
-            }
-            case upgrade: UpgradePower => {
-              val myWarrior = troop.warrior()
-              attackLog.append(f" апгрейдит [${myRace().name} - ${myWarrior.name}%10s] |\n")
-              myWarrior.upgrade(upgrade.damage)
-            }
-            case downgrade: DowngradePower => {
-              val enemyWarrior = enemy.troop.warrior()
-              attackLog.append(f" даунгрейдит [${enemy.myRace().name} - ${enemyWarrior.name}%10s] |\n")
-              enemyWarrior.downgrade(downgrade.damage)
-            }
-            case _: Action => {
-              attackLog.append("Пришел какой-то другой навык |\n")
-            }
+      // если вернулся воин, то проводим атаку
+      if (warrior != null) {
+        // выводим информацию в лог атаки и помечаем, что воин ходил
+        attackLog.append(f"| $number Воин [${myRace().name} - ${warrior.name}%9s(${warrior.health()}%5s)]")
+        warrior.turnPlayOn()
+
+        // достаем активный навык воина
+        warrior.action() match {
+          case simple: SimpleAttack => {
+            // вытаскиваем воина из отряда противника
+            val enemyWarrior = enemy.troop.warrior()
+            attackLog.append(f" атакует [${enemy.myRace().name} - ${enemyWarrior.name}%9s(${enemyWarrior.health()}%5s)] = ${simple.damage}%4s * ${warrior.power()}%3s == ${simple.damage * warrior.power()}%4s |\n")
+            // проводим атаку
+            enemy.takeDamage(warrior, simple)
+          }
+          case upgrade: UpgradePower => {
+            // достаем воина из своего отряда
+            val myWarrior = troop.warrior()
+            attackLog.append(f" апгрейдит [${myRace().name} - ${myWarrior.name}%10s] |\n")
+            // апгрейдим
+            myWarrior.upgrade(upgrade.damage)
+          }
+          case downgrade: DowngradePower => {
+            // достаем воина из отряда противника
+            val enemyWarrior = enemy.troop.warrior()
+            attackLog.append(f" даунгрейдит [${enemy.myRace().name} - ${enemyWarrior.name}%10s] |\n")
+            // наводим ему даунгрейд
+            enemyWarrior.downgrade(downgrade.damage)
+          }
+          case _: Action => {
+            // пришел значит не обработанный навык, надо проверять что не так получилось...
+            attackLog.append("Пришел какой-то другой навык |\n")
           }
         }
-        case _ => attackLog.append("Нет воинов")
+      }
+      else {
+        attackLog.append("Нет воинов")
       }
     }
+    // возвращаем лог атаки
     attackLog.toString()
   }
 
@@ -71,7 +104,7 @@ class Player(val name: String, val isEvil: Boolean) {
     * @param pawn - воин вражеского игрока
     */
   def takeDamage(pawn: Pawn, action: SimpleAttack): Unit = {
-    troop.warrior().takeDamage(action.damage * pawn.getPower())
+    troop.warrior().takeDamage(action.damage * pawn.power())
     pawn.normalPower()
   }
 
@@ -82,16 +115,41 @@ class Player(val name: String, val isEvil: Boolean) {
     */
   def isAlive: Boolean = troop.isMoreAlive
 
+  /**
+    * Может кто еще играть в отряде ?
+    *
+    * @return
+    */
   def isAnyoneToPlay: Boolean = troop.isMorePlayed
 
-  override def toString: String = s"Имя команды[$name]"
-
+  /**
+    * Достать свою расу
+    *
+    * @return - раса игрока
+    */
   def myRace(): Race = this.race
 
+  /**
+    * Вывести статус отряда
+    *
+    * @return - статус отряда в одной строке
+    */
   def troopStatus(): String = f"| ${troop.race.name}%15s | ${troop.status()}"
 
-  var played: Boolean = false
+  /**
+    * Начать новый раунд.
+    * Сбрасывает флаги и флаги у отряда
+    *
+    */
   def newRound(): Unit = {
+    played = false
     troop.newRound()
   }
+
+  /**
+    * Вывести объект в строку
+    *
+    * @return - объект в строку
+    */
+  override def toString: String = s"Имя команды[$name]"
 }
