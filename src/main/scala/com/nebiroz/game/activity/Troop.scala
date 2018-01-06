@@ -11,7 +11,7 @@ import scala.util.Random
   *
   * @param race - раса отряда
   */
-class Troop(val race: Race) {
+class Troop(val name: String, val race: Race) {
   // главный констуктор. надо создать отряд
   private val pawns: List[Pawn] = makeDefaultArmy()
 

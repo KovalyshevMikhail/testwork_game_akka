@@ -2,8 +2,7 @@ package com.nebiroz.game
 
 import com.nebiroz.game.activity.exceptions.{EndGameException, NoMoreInArmyException}
 
-import scala.util.control.Breaks._
-import com.nebiroz.game.activity.{Loger, Player}
+import com.nebiroz.game.activity.{GameLoger, Player}
 import com.nebiroz.game.activity.race.{Race, _}
 
 import scala.util.Random
@@ -17,20 +16,20 @@ class Game {
     * Количество раундов игры
     *
     */
-  private val MAX_ROUND: Int = 15
+  private val MAX_ROUND: Int = 35
 
   /**
     * Игровой цикл игры
     *
     */
   def gameLoop(): Unit = {
-    Loger.info("Игровой цикл")
+    GameLoger.info("Игровой цикл")
 
     // создаем игроков и сразу выводим инфо по ним
     val players = makePlayers
     dumpPlayers(players)
 
-    Loger.info("Да начнется битва!!\n\n")
+    GameLoger.info("Да начнется битва!!\n\n")
     val roundResult: StringBuilder = new StringBuilder
 
     var isEnd = false
@@ -78,7 +77,7 @@ class Game {
 
         // добавляем завершающую строку раунда, выводим и очищаем буфер
         roundResult append s"|---------------------------------------------------------------------------------------------|\n"
-        Loger.info(roundResult.toString())
+        GameLoger.info(roundResult.toString())
         roundResult.clear()
 
         if (isEnd) {
@@ -98,8 +97,7 @@ class Game {
     }
 
     // выводим надписи и выводим победителя(ей)
-    Loger.info("\n\nКонец битвы !")
-    Loger.info("Результаты:")
+    GameLoger.info("\n\nКонец битвы !\nРезультаты:")
     checkWinner(players)
   }
 
@@ -133,11 +131,11 @@ class Game {
     */
   def checkWinner(players: List[Player]): Unit = {
     println("|-------------------------------------------------------------------------------------------------------------------------|")
-    println(f"|${"Раса"}%15s  | ${"Маг"}%10s | ${"Лучник1"}%10s | ${"Лучник2"}%10s | ${"Лучник3"}%10s | ${"Воин1"}%10s | ${"Воин2"}%10s | ${"Воин3"}%10s | ${"Воин4"}%10s |")
-    println("|-----------------|------------|------------|------------|------------|------------|------------|------------|------------|")
+    println(f"|${"Раса"}%10s  |${"Отряд"}%25s  | ${"Маг"}%10s | ${"Лучник1"}%10s | ${"Лучник2"}%10s | ${"Лучник3"}%10s | ${"Воин1"}%10s | ${"Воин2"}%10s | ${"Воин3"}%10s | ${"Воин4"}%10s |")
+    println("|------------|---------------------------|------------|------------|------------|------------|------------|------------|------------|")
     players foreach((player: Player) => {
       if (player.isAlive) {
-        println("|----!!!-----WINNER-----!!!--------------------------------------------------------------------------------------|")
+        println("|----!!!-----WINNER-----!!!-------!!!-----WINNER-----!!!----------------!!!-----WINNER-----!!!-------------------|")
         dumpPlayer(player)
         println("|-------------------------------------------------------------------------------------------------------------------------|")
       }
@@ -155,8 +153,14 @@ class Game {
     */
   def makePlayers: List[Player] = {
     List[Player](
-      new Player("Белые медведи", false),
-      new Player("Чертовы мертвяки", true)
+      new Player("Белые медведи", false, List(
+        "Юные орлы",
+        "Уничтожители ордена"
+      )),
+      new Player("Чертовы мертвяки", true, List(
+        "Стремительные жильцы",
+        "Отвратительные"
+      ))
     )
   }
 }
@@ -191,7 +195,7 @@ object Game {
     * @param args - список аргументов, передаваемые в игру
     */
   def main(args: Array[String]): Unit = {
-    Loger.info("Стартуем игру")
+    GameLoger.info("Стартуем игру")
     val game: Game = new Game()
     game.gameLoop()
   }

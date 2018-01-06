@@ -4,7 +4,7 @@ package com.nebiroz.game.activity
   * Простой объект логера, который просто выводит переданные надписи.
   *
   */
-object Loger {
+object GameLoger {
   /**
     * Общий буфер лога.
     */

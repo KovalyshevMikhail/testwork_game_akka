@@ -4,7 +4,7 @@ package com.nebiroz.game.activity.traits
   * Трейт, добавляющий функционал апгрейда воина
   *
   */
-trait TUpgradeable {
+trait TMorePower {
   /**
     * Текущий уровень мощности активного навыка
     *

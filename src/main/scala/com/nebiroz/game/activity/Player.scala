@@ -14,7 +14,7 @@ import scala.util.Random
   * @param name - имя игрока
   * @param isEvil - добрый или злой игрок
   */
-class Player(val name: String, val isEvil: Boolean) {
+class Player(val name: String, val isEvil: Boolean, val troopNames: List[String]) {
 
   /**
     * Объявляем расу игрока.
@@ -28,9 +28,13 @@ class Player(val name: String, val isEvil: Boolean) {
       Game.goodRaces()(Random.nextInt(Game.goodRaces().size))
   }
   /**
-    * Отряд игрока
+    * Отряды игрока
     */
-  private val troop: Troop = new Troop(this.race)
+  private val troops: List[Troop] = {
+    troopNames.collect{
+      case name: String => new Troop(name, this.race)
+    }
+  }
 
   /**
     * Флаг, означающий ходил игрок или еще нет
@@ -47,88 +51,148 @@ class Player(val name: String, val isEvil: Boolean) {
   def attack(enemy: Player): String = {
     // инициализируем лог атаки и количество воинов, кто живой еще
     val attackLog = new StringBuilder
-    val sizeAliveArmy = troop.getCountOfAlive
+    // случайно выбираем отряд для битвы
+    val troop = forPlayTroop
+    if (troop != null) {
+      // смотрим количество войск в отряде
+      val sizeAliveArmy = troop.getCountOfAlive
 
-    // запускаем цикл по количеству живых воинов
-    for(number <- 1 to sizeAliveArmy) {
-      // берем воина
-      val warrior = troop nextWarrior()
+      // запускаем цикл по количеству живых воинов
+      for(number <- 1 to sizeAliveArmy) {
+        // берем воина
+        val warrior = troop nextWarrior()
 
-      // если вернулся воин, то проводим атаку
-      if (warrior != null) {
-        // выводим информацию в лог атаки и помечаем, что воин ходил
-        attackLog.append(f"| $number Воин [${myRace().name} - ${warrior.name}%9s(${warrior.health()}%5s)]")
-        warrior.turnPlayOn()
+        // если вернулся воин, то проводим атаку
+        if (warrior != null) {
+          // выводим информацию в лог атаки и помечаем, что воин ходил
+          attackLog.append(f"| $number Воин [${myRace().name} - ${troop.name}%25s - ${warrior.name}%9s(${warrior.health()}%5s)]")
+          warrior.turnPlayOn()
 
-        // достаем активный навык воина
-        warrior.action() match {
-          case simple: SimpleAttack => {
-            // вытаскиваем воина из отряда противника
-            val enemyWarrior = enemy.troop.warrior()
-            if (enemyWarrior != null) {
-              attackLog.append(f" атакует [${enemy.myRace().name} - ${enemyWarrior.name}%9s(${enemyWarrior.health()}%5s)] = ${simple.damage}%4s * ${warrior.power()}%3s == ${simple.damage * warrior.power()}%4s |\n")
-              // проводим атаку
-              enemy.takeDamage(warrior, simple)
+          // достаем активный навык воина
+          warrior.action() match {
+            case simple: SimpleAttack => {
+              // вытаскиваем случайный отряд
+              val enemyTroop = enemy.aliveTroop
+
+              if (enemyTroop != null) {
+                // вытаскиваем воина из случайного отряда противника
+                val enemyWarrior = enemyTroop.warrior()
+
+                if (enemyWarrior != null) {
+                  attackLog.append(f" атакует [${enemy.myRace().name} - ${enemyTroop.name}%25s - ${enemyWarrior.name}%9s(${enemyWarrior.health()}%5s)] = ${simple.damage}%4s * ${warrior.power()}%3s == ${simple.damage * warrior.power()}%4s |\n")
+                  // проводим атаку
+                  enemy.takeDamage(warrior, simple)
+                }
+              }
             }
-          }
-          case upgrade: UpgradePower => {
-            // достаем воина из своего отряда
-            val myWarrior = troop.warrior()
+            case upgrade: UpgradePower => {
+              // достаем воина из своего отряда, в котором и тот, кто апгрейдит
+              val myWarrior = troop.warrior()
 
-            if (myWarrior != null) {
-              attackLog.append(f" апгрейдит [${myRace().name} - ${myWarrior.name}%10s] |\n")
-              // апгрейдим
-              myWarrior.upgrade(upgrade.damage)
+              if (myWarrior != null) {
+                attackLog.append(f" апгрейдит [${myRace().name} - ${myWarrior.name}%10s] |\n")
+                // апгрейдим
+                myWarrior.upgrade(upgrade.damage)
+              }
             }
-          }
-          case downgrade: DowngradePower => {
-            // достаем воина из отряда противника
-            val enemyWarrior = enemy.troop.warrior()
+            case downgrade: DowngradePower => {
+              // вытаскиваем случайный отряд
+              val enemyTroop = enemy.aliveTroop
 
-            if (enemyWarrior != null) {
-              attackLog.append(f" даунгрейдит [${enemy.myRace().name} - ${enemyWarrior.name}%10s] |\n")
-              // наводим ему даунгрейд
-              enemyWarrior.downgrade(downgrade.damage)
+              if (enemyTroop != null) {
+                // вытаскиваем воина из случайного отряда противника
+                val enemyWarrior = enemyTroop.warrior()
+
+                if (enemyWarrior != null) {
+                  attackLog.append(f" даунгрейдит [${enemy.myRace().name} - ${enemyTroop.name}%25s - ${enemyWarrior.name}%10s] |\n")
+                  // наводим ему даунгрейд
+                  enemyWarrior.downgrade(downgrade.damage)
+                }
+              }
             }
-          }
-          case _: Action => {
-            // пришел значит не обработанный навык, надо проверять что не так получилось...
-            attackLog.append("Пришел какой-то другой навык |\n")
+            case _: Action => {
+              // пришел значит не обработанный навык, надо проверять что не так получилось...
+              attackLog.append("Пришел какой-то другой навык |\n")
+            }
           }
         }
-      }
-      else {
-        attackLog.append("Нет воинов")
+        else {
+          attackLog.append("Нет воинов")
+        }
       }
     }
+    else {
+      attackLog.append("Почему-то отряд выбрался неправильно о_О")
+    }
+
     // возвращаем лог атаки
     attackLog.toString()
   }
 
   /**
     * Принимаем атаку от воина врага.
-    * Выбираем случайного воина и наносим ему урон от воина
+    * Выбираем случайного воина из случайного, живого отряда и наносим ему урон от воина
     *
     * @param pawn - воин вражеского игрока
     */
   def takeDamage(pawn: Pawn, action: SimpleAttack): Unit = {
-    troop.warrior().takeDamage(action.damage * pawn.power())
+    aliveTroop.warrior().takeDamage(action.damage * pawn.power())
     pawn.normalPower()
   }
 
   /**
-    * Есть кто живой в отряде ?
+    * Доступный отряд, который живой и может ходить.
     *
-    * @return
+    * @return - отряд
     */
-  def isAlive: Boolean = troop.isMoreAlive
+  def forPlayTroop: Troop = {
+    val availableTroops = troops filter((troop: Troop) => troop.isMoreAlive && troop.isMorePlayed) collect {
+      case troop: Troop => troop
+    }
+
+    if (availableTroops.nonEmpty) {
+      availableTroops(Random.nextInt(availableTroops.size))
+    }
+    else {
+      null
+    }
+  }
 
   /**
-    * Может кто еще играть в отряде ?
+    * Доступный живой отряд
+    *
+    * @return - живой отряд
+    */
+  def aliveTroop: Troop = {
+    val availableTroops = troops filter((troop: Troop) => troop.isMoreAlive) collect {
+      case troop: Troop => troop
+    }
+
+    if (availableTroops.nonEmpty) {
+      availableTroops(Random.nextInt(availableTroops.size))
+    }
+    else {
+      null
+    }
+  }
+
+  /**
+    * Есть ли отряды, в которых кто-то жив ?
     *
     * @return
     */
-  def isAnyoneToPlay: Boolean = troop.isMorePlayed
+  def isAlive: Boolean = {
+    troops.count((troop: Troop) => troop.isMoreAlive) > 0
+  }
+
+  /**
+    * Есть ли отряды, в которых кто-то может ходить ?
+    *
+    * @return
+    */
+  def isAnyoneToPlay: Boolean = {
+    troops.count((troop: Troop) => troop.isMorePlayed) > 0
+  }
 
   /**
     * Достать свою расу
@@ -138,11 +202,22 @@ class Player(val name: String, val isEvil: Boolean) {
   def myRace(): Race = this.race
 
   /**
-    * Вывести статус отряда
+    * Вывести статус каждого отряда отдельно
     *
-    * @return - статус отряда в одной строке
+    * @return - статус всех отрядов в одной строке
     */
-  def troopStatus(): String = f"| ${troop.race.name}%15s | ${troop.status()}"
+  def troopStatus(): String = {
+    val status = new StringBuilder("")
+    troops.foreach((troop: Troop) => {
+      if (status.isEmpty) {
+        status.append(f"| ${troop.race.name}%10s | ${troop.name}%25s | ${troop.status()}\n")
+      }
+      else {
+        status.append(f"| ${""}%10s | ${troop.name}%25s | ${troop.status()}")
+      }
+    })
+    status.toString()
+  }
 
   /**
     * Начать новый раунд.
@@ -151,7 +226,9 @@ class Player(val name: String, val isEvil: Boolean) {
     */
   def newRound(): Unit = {
     played = false
-    troop.newRound()
+    troops foreach((troop: Troop) => {
+      troop.newRound()
+    })
   }
 
   /**

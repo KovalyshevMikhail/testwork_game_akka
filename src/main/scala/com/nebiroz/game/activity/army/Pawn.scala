@@ -2,14 +2,14 @@ package com.nebiroz.game.activity.army
 
 import com.nebiroz.game.activity.actions.Action
 import com.nebiroz.game.activity.race.Race
-import com.nebiroz.game.activity.traits.{THealth, TUpgradeable}
+import com.nebiroz.game.activity.traits.{THealth, TMorePower}
 
 import scala.util.Random
 
 /**
 * Любой игральный объект, который атакует
 */
-abstract class Pawn(val name: String, val race: Race) extends THealth with TUpgradeable {
+abstract class Pawn(val name: String, val race: Race) extends THealth with TMorePower {
   /**
     * Список навыков игрового НПС
     */
