@@ -54,6 +54,7 @@ class Player(val name: String, val isEvil: Boolean, val troopNames: List[String]
     // случайно выбираем отряд для битвы
     val troop = forPlayTroop
     if (troop != null) {
+      attackLog append f"| Игрок [${this.name}%20s - ${this.myRace().name}%10s] атакует [${enemy.name}%20s - ${enemy.myRace().name}%10s] ----------|\n"
       // смотрим количество войск в отряде
       val sizeAliveArmy = troop.getCountOfAlive
 
@@ -83,6 +84,12 @@ class Player(val name: String, val isEvil: Boolean, val troopNames: List[String]
                   // проводим атаку
                   enemy.takeDamage(warrior, simple)
                 }
+                else {
+                  attackLog.append("\n")
+                }
+              }
+              else {
+                attackLog.append("\n")
               }
             }
             case upgrade: UpgradePower => {
@@ -93,6 +100,9 @@ class Player(val name: String, val isEvil: Boolean, val troopNames: List[String]
                 attackLog.append(f" апгрейдит [${myRace().name} - ${myWarrior.name}%10s] |\n")
                 // апгрейдим
                 myWarrior.upgrade(upgrade.damage)
+              }
+              else {
+                attackLog.append("\n")
               }
             }
             case downgrade: DowngradePower => {
@@ -108,6 +118,12 @@ class Player(val name: String, val isEvil: Boolean, val troopNames: List[String]
                   // наводим ему даунгрейд
                   enemyWarrior.downgrade(downgrade.damage)
                 }
+                else {
+                  attackLog.append("\n")
+                }
+              }
+              else {
+                attackLog.append("\n")
               }
             }
             case _: Action => {
@@ -120,9 +136,6 @@ class Player(val name: String, val isEvil: Boolean, val troopNames: List[String]
           attackLog.append("Нет воинов")
         }
       }
-    }
-    else {
-      attackLog.append("Почему-то отряд выбрался неправильно о_О")
     }
 
     // возвращаем лог атаки

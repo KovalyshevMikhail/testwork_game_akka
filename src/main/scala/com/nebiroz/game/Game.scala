@@ -37,8 +37,6 @@ class Game {
     try {
       // запускаем игровой цикл
       for (round <- 1 to MAX_ROUND) {
-        roundResult append f"|Раунд - [$round%03d] ---------------------------------------------------------------------------|\n"
-
         // по порядку выбираем игроков
         players.foreach((player: Player) => {
           // сразу помечаем, что игрок уже ходил
@@ -54,9 +52,13 @@ class Game {
           try {
             // если противник есть, то бьем его
             if (enemies.nonEmpty) {
-              val enemy = enemies(Random.nextInt(enemies.size))
-              roundResult append f"| Игрок [${player.name}%20s - ${player.myRace().name}%10s] атакует [${enemy.name}%20s - ${enemy.myRace().name}%10s] ----------|\n"
-              roundResult append s"${player.attack(enemy)}"
+              val attackLog = s"${player.attack(enemies(Random.nextInt(enemies.size)))}"
+
+              // если лог атаки не пустой, то выводим
+              if (attackLog.nonEmpty) {
+                roundResult append f"|Раунд - [$round%03d] ---------------------------------------------------------------------------|\n"
+                roundResult append attackLog
+              }
             }
             // иначе выходим из цикла и заканчиваем игру
             else {
@@ -75,10 +77,13 @@ class Game {
           player.newRound()
         })
 
+        // если лог раунда не пустой, то
         // добавляем завершающую строку раунда, выводим и очищаем буфер
-        roundResult append s"|---------------------------------------------------------------------------------------------|\n"
-        GameLoger.info(roundResult.toString())
-        roundResult.clear()
+        if (roundResult.nonEmpty) {
+          roundResult append s"|---------------------------------------------------------------------------------------------|\n"
+          GameLoger.info(roundResult.toString())
+          roundResult.clear()
+        }
 
         if (isEnd) {
           throw new EndGameException
@@ -99,6 +104,8 @@ class Game {
     // выводим надписи и выводим победителя(ей)
     GameLoger.info("\n\nКонец битвы !\nРезультаты:")
     checkWinner(players)
+
+    GameLoger.close
   }
 
 
@@ -137,7 +144,6 @@ class Game {
       if (player.isAlive) {
         println("|----!!!-----WINNER-----!!!-------!!!-----WINNER-----!!!----------------!!!-----WINNER-----!!!-------------------|")
         dumpPlayer(player)
-        println("|-------------------------------------------------------------------------------------------------------------------------|")
       }
       else{
         dumpPlayer(player)
