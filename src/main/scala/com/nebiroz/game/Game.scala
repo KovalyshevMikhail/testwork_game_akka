@@ -52,13 +52,20 @@ class Game {
           try {
             // если противник есть, то бьем его
             if (enemies.nonEmpty) {
-              val attackLog = s"${player.attack(enemies(Random.nextInt(enemies.size)))}"
+              val enemy = enemies(Random.nextInt(enemies.size))
+
+              if (player.isAlive && enemy.isAlive) {
+                GameLoger.beginRound(round)
+                player.attack(enemy)
+                GameLoger.end().endLine()
+              }
+              /*val attackLog = s"${player.attack(enemies(Random.nextInt(enemies.size)))}"
 
               // если лог атаки не пустой, то выводим
               if (attackLog.nonEmpty) {
-                roundResult append f"|Раунд - [$round%03d] ---------------------------------------------------------------------------|\n"
+                GameLoger.beginRound(round)
                 roundResult append attackLog
-              }
+              }*/
             }
             // иначе выходим из цикла и заканчиваем игру
             else {
@@ -80,7 +87,7 @@ class Game {
         // если лог раунда не пустой, то
         // добавляем завершающую строку раунда, выводим и очищаем буфер
         if (roundResult.nonEmpty) {
-          roundResult append s"|---------------------------------------------------------------------------------------------|\n"
+//          roundResult append s"|---------------------------------------------------------------------------------------------|\n"
           GameLoger.info(roundResult.toString())
           roundResult.clear()
         }
@@ -105,7 +112,7 @@ class Game {
     GameLoger.info("\n\nКонец битвы !\nРезультаты:")
     checkWinner(players)
 
-    GameLoger.close
+    GameLoger.close()
   }
 
 
@@ -138,7 +145,7 @@ class Game {
     */
   def checkWinner(players: List[Player]): Unit = {
     println("|-------------------------------------------------------------------------------------------------------------------------|")
-    println(f"|${"Раса"}%10s  |${"Отряд"}%25s  | ${"Маг"}%10s | ${"Лучник1"}%10s | ${"Лучник2"}%10s | ${"Лучник3"}%10s | ${"Воин1"}%10s | ${"Воин2"}%10s | ${"Воин3"}%10s | ${"Воин4"}%10s |")
+    println(f"|${"Раса"}%10s  |${"Отряд"}%10s  | ${"Маг"}%10s | ${"Лучник1"}%10s | ${"Лучник2"}%10s | ${"Лучник3"}%10s | ${"Воин1"}%10s | ${"Воин2"}%10s | ${"Воин3"}%10s | ${"Воин4"}%10s |")
     println("|------------|---------------------------|------------|------------|------------|------------|------------|------------|------------|")
     players foreach((player: Player) => {
       if (player.isAlive) {
@@ -160,12 +167,12 @@ class Game {
   def makePlayers: List[Player] = {
     List[Player](
       new Player("Белые медведи", false, List(
-        "Юные орлы",
-        "Уничтожители ордена"
+        "Орленки",
+        "Орден"
       )),
       new Player("Чертовы мертвяки", true, List(
-        "Стремительные жильцы",
-        "Отвратительные"
+        "Жильцы",
+        "Ходоки"
       ))
     )
   }

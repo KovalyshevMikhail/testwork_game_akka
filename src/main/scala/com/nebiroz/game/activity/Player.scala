@@ -21,7 +21,7 @@ class Player(val name: String, val isEvil: Boolean, val troopNames: List[String]
     * Выбираем случайно из списка хороших \ плохих рас
     *
     */
-  private val race: Race = {
+  private val myRace: Race = {
     if (isEvil)
       Game.evilRaces()(Random.nextInt(Game.evilRaces().size))
     else
@@ -32,7 +32,7 @@ class Player(val name: String, val isEvil: Boolean, val troopNames: List[String]
     */
   private val troops: List[Troop] = {
     troopNames.collect{
-      case name: String => new Troop(name, this.race)
+      case name: String => new Troop(name, this.myRace)
     }
   }
 
@@ -54,7 +54,11 @@ class Player(val name: String, val isEvil: Boolean, val troopNames: List[String]
     // случайно выбираем отряд для битвы
     val troop = forPlayTroop
     if (troop != null) {
-      attackLog append f"| Игрок [${this.name}%20s - ${this.myRace().name}%10s] атакует [${enemy.name}%20s - ${enemy.myRace().name}%10s] ----------|\n"
+      //attackLog append f"| Игрок [${this.name}%20s - ${this.race().name}%10s] атакует [${enemy.name}%20s - ${enemy.race().name}%10s] ----------|\n"
+
+      GameLoger
+        .attackPlayer(this.name, this.race().name, enemy.name, enemy.race().name)
+        .endLine()
       // смотрим количество войск в отряде
       val sizeAliveArmy = troop.getCountOfAlive
 
@@ -66,7 +70,9 @@ class Player(val name: String, val isEvil: Boolean, val troopNames: List[String]
         // если вернулся воин, то проводим атаку
         if (warrior != null) {
           // выводим информацию в лог атаки и помечаем, что воин ходил
-          attackLog.append(f"| $number Воин [${myRace().name} - ${troop.name}%25s - ${warrior.name}%9s(${warrior.health()}%5s)]")
+          //attackLog.append(f"| $number Воин [${race().name} - ${troop.name}%25s - ${warrior.name}%9s(${warrior.health()}%5s)]")
+          GameLoger.attackBegin(number)
+          GameLoger.attackWarrior(race().name, troop.name, warrior)
           warrior.turnPlayOn()
 
           // достаем активный навык воина
@@ -80,29 +86,28 @@ class Player(val name: String, val isEvil: Boolean, val troopNames: List[String]
                 val enemyWarrior = enemyTroop.warrior()
 
                 if (enemyWarrior != null) {
-                  attackLog.append(f" атакует [${enemy.myRace().name} - ${enemyTroop.name}%25s - ${enemyWarrior.name}%9s(${enemyWarrior.health()}%5s)] = ${simple.damage}%4s * ${warrior.power()}%3s == ${simple.damage * warrior.power()}%4s |\n")
+                  //attackLog.append(f" атакует [${enemy.race().name} - ${enemyTroop.name}%25s - ${enemyWarrior.name}%9s(${enemyWarrior.health()}%5s)] = ${simple.damage}%4s * ${warrior.power()}%3s == ${simple.damage * warrior.power()}%4s |\n")
+                  GameLoger
+                    .attackTo()
+                    .attackWarrior(enemy.race().name, enemyTroop.name, enemyWarrior)
+                    .attackSimple(simple, warrior)
                   // проводим атаку
                   enemy.takeDamage(warrior, simple)
-                }
-                else {
-                  attackLog.append("\n")
+                  attackLog.append("ok")
                 }
               }
-              else {
-                attackLog.append("\n")
-              }
+              GameLoger.endLine()
             }
             case upgrade: UpgradePower => {
               // достаем воина из своего отряда, в котором и тот, кто апгрейдит
               val myWarrior = troop.warrior()
 
               if (myWarrior != null) {
-                attackLog.append(f" апгрейдит [${myRace().name} - ${myWarrior.name}%10s] |\n")
+                //attackLog.append(f" апгрейдит [${race().name} - ${myWarrior.name}%10s] |\n")
+                GameLoger.attackUpgrade(race().name, myWarrior.name).endLine()
                 // апгрейдим
                 myWarrior.upgrade(upgrade.damage)
-              }
-              else {
-                attackLog.append("\n")
+                attackLog.append("ok")
               }
             }
             case downgrade: DowngradePower => {
@@ -114,26 +119,23 @@ class Player(val name: String, val isEvil: Boolean, val troopNames: List[String]
                 val enemyWarrior = enemyTroop.warrior()
 
                 if (enemyWarrior != null) {
-                  attackLog.append(f" даунгрейдит [${enemy.myRace().name} - ${enemyTroop.name}%25s - ${enemyWarrior.name}%10s] |\n")
+                  //attackLog.append(f" даунгрейдит [${enemy.race().name} - ${enemyTroop.name}%25s - ${enemyWarrior.name}%10s] |\n")
+                  GameLoger.attackDowngrade(enemy.race().name, enemyTroop.name, enemyWarrior.name)
                   // наводим ему даунгрейд
                   enemyWarrior.downgrade(downgrade.damage)
-                }
-                else {
-                  attackLog.append("\n")
+                  attackLog.append("ok")
                 }
               }
-              else {
-                attackLog.append("\n")
-              }
+              GameLoger.endLine()
             }
             case _: Action => {
               // пришел значит не обработанный навык, надо проверять что не так получилось...
-              attackLog.append("Пришел какой-то другой навык |\n")
+              GameLoger.info("Пришел какой-то другой навык |\n")
             }
           }
         }
         else {
-          attackLog.append("Нет воинов")
+          GameLoger.info("Нет воинов\n")
         }
       }
     }
@@ -212,7 +214,7 @@ class Player(val name: String, val isEvil: Boolean, val troopNames: List[String]
     *
     * @return - раса игрока
     */
-  def myRace(): Race = this.race
+  def race(): Race = this.myRace
 
   /**
     * Вывести статус каждого отряда отдельно
@@ -223,10 +225,10 @@ class Player(val name: String, val isEvil: Boolean, val troopNames: List[String]
     val status = new StringBuilder("")
     troops.foreach((troop: Troop) => {
       if (status.isEmpty) {
-        status.append(f"| ${troop.race.name}%10s | ${troop.name}%25s | ${troop.status()}\n")
+        status.append(f"| ${troop.race.name}%10s | ${troop.name}%10s | ${troop.status()}\n")
       }
       else {
-        status.append(f"| ${""}%10s | ${troop.name}%25s | ${troop.status()}")
+        status.append(f"| ${""}%10s | ${troop.name}%10s | ${troop.status()}")
       }
     })
     status.toString()
